@@ -1,0 +1,14 @@
+target
+tags
+.classpath
+.project
+.settings
+.DS_Store
+.idea
+*.iml
+.*.swp
+.m2/repository
+*.log
+pom.xml.versionsBackup
+.editorconfig
+*dump*
