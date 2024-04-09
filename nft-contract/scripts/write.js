@@ -15,10 +15,6 @@ async function main() {
     const signer = new ethers.Wallet(contractOwnerPrivateKey, ethers.provider);
     const myContractWithSigner = myContract.connect(signer);
 
-    // Example: Burn
-    // const burned = await myContractWithSigner.burn(1);
-    // console.log("Value:", value.toString());
-
     // Example: Pay interests
     const paid = await myContractWithSigner.payInterestsToAllHolders();
     console.log("Value:", paid.toString());
