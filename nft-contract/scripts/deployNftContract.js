@@ -1,11 +1,7 @@
 // const contractName = process.env["ETHEREUM_CONTRACT_NAME"]
 const contractName = "myOpportunityToken"
-console.log("ETHEREUM_CONTRACT_NAME=", contractName)
-// const contractSymbol = process.env["ETHEREUM_CONTRACT_SYMBOL"]
 const contractSymbol = "OPP"
-console.log("ETHEREUM_CONTRACT_SYMBOL=", contractSymbol)
-const contractClass = process.env["ETHEREUM_CONTRACT_CLASS"]
-console.log("ETHEREUM_CONTRACT_CLASS=", contractClass)
+const contractClass = "NftContract"
 
 const amount = "1" // ETH
 const interestRatePerCent = 30
