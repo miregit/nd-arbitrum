@@ -1,0 +1,111 @@
+name: Build & Lint
+on: [pull_request]
+
+env:
+  GITHUB_USER_NAME: ${{ secrets.GH_USERNAME_PUBLIC_REPOS }}
+  GITHUB_USER_PASS: ${{ secrets.GH_PASSWORD_PUBLIC_REPOS }}
+  MAVEN_CLI_OPTS: -s ../.m2/settings.xml --batch-mode
+  infra_path: ./infra
+  VERSION: '1.0.${{ github.run_number }}'
+  NOMAD_LOCAL_PATH: "/local"
+
+jobs:
+  build-npl:
+    runs-on: ubuntu-latest
+    env:
+      docker-context: "./npl"
+    steps:
+        - uses: actions/checkout@v4
+        - name: Login to GitHub Container Registry
+          uses: docker/login-action@v2
+          with:
+            registry: ghcr.io
+            username: ${{ env.GITHUB_USER_NAME }}
+            password: ${{ env.GITHUB_USER_PASS }}
+        - uses: actions/setup-java@v3
+          with:
+            java-version: '17'
+            distribution: 'corretto'
+            cache: 'maven'
+        - name: Build & Lint engine
+          working-directory: ${{ env.infra_path }}
+          run: make -e build-npl-protocols
+        - name: Create engine image
+          working-directory: ${{ env.infra_path }}
+          run: make -e build-images-npl-protocols
+        - name: Upload npl generated resource to artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: npl-output
+            path: |
+              ./services/libs/common/src/generated-sources
+
+  build-services:
+    needs: build-npl
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.infra_path }}
+    steps:
+        - uses: actions/checkout@v4
+        - name: Login to GitHub Container Registry
+          uses: docker/login-action@v2
+          with:
+            registry: ghcr.io
+            username: ${{ env.GITHUB_USER_NAME }}
+            password: ${{ env.GITHUB_USER_PASS }}
+        - name: Use Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '18.x'
+            cache: 'yarn'
+            cache-dependency-path: '**/yarn.lock'
+        - name: Download npl generated resource to artifact
+          uses: actions/download-artifact@v4
+          with:
+            name: npl-output
+            path: ./services/libs/common/src/generated-sources
+        - name: Build & Lint
+          run: make -e build-lint-services
+        - name: Create images
+          run: make -e build-images-services
+
+  build-common:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.infra_path }}
+    steps:
+        - uses: actions/checkout@v4
+        - name: Login to GitHub Container Registry
+          uses: docker/login-action@v2
+          with:
+            registry: ghcr.io
+            username: ${{ env.GITHUB_USER_NAME }}
+            password: ${{ env.GITHUB_USER_PASS }}
+        - name: Create images
+          run: make -e build-images-common
+
+  build-ethereum:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.infra_path }}
+    steps:
+        - uses: actions/checkout@v4
+#        - name: Login to GitHub Container Registry
+#          uses: docker/login-action@v2
+#          with:
+#            registry: ghcr.io
+#            username: ${{ env.GITHUB_USER_NAME }}
+#            password: ${{ env.GITHUB_USER_PASS }}
+        - name: Use Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '18.x'
+            cache: 'yarn'
+            cache-dependency-path: '**/yarn.lock'
+        - name: Compile Contracts
+          run: make -e build-contracts
+        - name: Test Contracts
+          run: make -e test-contracts

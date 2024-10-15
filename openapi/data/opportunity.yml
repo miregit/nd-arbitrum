@@ -1,0 +1,160 @@
+CreateOpportunityRequest:
+  type: object
+  required:
+    - name
+    - interestRepayment
+    - interestRate
+    - minimalTokenTranche
+    - nominalAmount
+    - subscriptionPeriodEnd
+    - maturityDate
+  properties:
+    name:
+      type: string
+      description: "Unique identifier for opportunity"
+      example: "Test Opportunity 1"
+    interestRepayment:
+      type: string
+      enum:
+        - daily
+        - monthly
+        - yearly
+      description: "opportunity's pay period interval"
+      example: monthly
+    interestRate:
+      type: number
+      description: "the interest that the opportunity pays to investors"
+      example: 10
+    nominalAmount:
+      type: number
+      description: "the total that can be invested of the opportunity"
+      example: 0.1
+    minimalTokenTranche:
+      type: number
+      description: "the minimal investment to  opportunity"
+      example: 0.00005
+    subscriptionPeriodEnd:
+      type: string
+      format: date
+      description: "the end of the subscription period during which investors may register and pay their principal"
+      example: "2024-10-10"
+    maturityDate:
+      type: string
+      format: date
+      description: "opportunity's maturity date at which time investor's will have received their interest and principal"
+      example: "2025-01-10"
+
+OpportunityJson:
+  type: object
+  required:
+    - id
+    - name
+    - interestRepayment
+    - interestRate
+    - nominalAmount
+    - minimalTokenTranche
+    - numberOfPayments
+    - subscriptionPeriodEnd
+    - maturityDate
+    - contractAddress
+    - status
+    - investorWhiteList
+  properties:
+    id:
+      type: string
+      description: "Unique identifier for opportunity"
+      example: "471ac52f-90dc-4838-ada8-cd774c952442"
+    name:
+      type: string
+      description: "The name of the opportunity"
+      example: "opportunity name"
+    interestRepayment:
+      type: string
+      enum:
+        - daily
+        - monthly
+        - yearly
+      description: "opportunity's pay period interval"
+      example: monthly
+    interestRate:
+      type: number
+      description: "the interest that the opportunity pays to  investors"
+      example: "10"
+    nominalAmount:
+      type: number
+      description: "the total that can be invested of the opportunity"
+      example: 0.1
+    minimalTokenTranche:
+      type: number
+      description: "the minimal investment to  opportunity"
+      example: "2d2323"
+    numberOfPayments:
+      type: number
+      description: "the total number of payouts to investors"
+      example: "2222"
+    subscriptionPeriodEnd:
+      type: string
+      description: "subscription period end date"
+      example: "2024-10-09"
+    maturityDate:
+      type: string
+      format: date
+      description: "opportunity's maturity date at which time investor's will have received their interest and principal"
+      example: "2025-04-08"
+    contractAddress:
+      type: string
+      description: "opportunity's contract address"
+      example: "0x9e1a8eb01040d96747ebF82Bb4441c32B3E64393"
+    state:
+      type: string
+      description: "opportunity's state"
+      example: "active"
+    investorWhiteList:
+      type: array
+      items:
+        type: string
+      description: "list of investors that can invest in the opportunity"
+      example: "0xcW581ac20E797d6887eD13f654BDeFF7d29CEf8C"
+
+
+OpportunityListJson:
+  type: object
+  description: "list of opportunities"
+  required:
+    - requests
+    - cursor
+  properties:
+    requests:
+      type: array
+      items:
+        $ref: "#/OpportunityJson"
+    cursor:
+      $ref: "./common.yml#/CursorJson"
+
+
+AddInvestorToOpportunityWhitelistRequest:
+  type: object
+  required:
+    - OpportunityId
+    - InvestorWalletAddress
+  properties:
+    OpportunityId:
+      type: string
+      description: "Unique identifier for opportunity"
+      example: "471ac52f-90dc-4838-ada8-cd774c952442"
+    InvestorWalletAddress:
+      type: string
+      description: "the wallet of the investor that we want to add to the opportunity's whitelist"
+      example: "0xcW581ac20E797d6887eD13f654BDeFF7d29CEf8C"
+
+
+SendInterestPayForOpportunityRequest:
+  type: object
+  required:
+    - OpportunityId
+    - InvestorWalletAddress
+  properties:
+    OpportunityId:
+      type: string
+      description: "Unique identifier for opportunity"
+      example: "471ac52f-90dc-4838-ada8-cd774c952442"

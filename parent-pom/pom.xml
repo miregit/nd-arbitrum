@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.noumenadigital.nd-demo</groupId>
+    <artifactId>parent-pom</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <io-prometheus-version>0.16.0</io-prometheus-version>
+        <logback.version>1.2.11</logback.version>
+        <noumena.platform.version>2024.1.5</noumena.platform.version>
+    </properties>
+
+
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/noumenadigital/packages/</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/noumenadigital/packages/</url>
+        </pluginRepository>
+    </pluginRepositories>
+
+    <dependencyManagement>
+         <dependencies>
+             <dependency>
+                <groupId>com.noumenadigital.platform</groupId>
+                <artifactId>clients</artifactId>
+                <version>${noumena.platform.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.noumenadigital.platform</groupId>
+                    <artifactId>npl-maven-plugin</artifactId>
+                    <version>${noumena.platform.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>

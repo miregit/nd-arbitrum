@@ -1,0 +1,3 @@
+package nd
+
+const test_operator: Party = 'operator'

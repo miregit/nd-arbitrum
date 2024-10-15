@@ -1,0 +1,75 @@
+RegisterInvestorRequest:
+  type: object
+  required:
+    - name
+    - emailAddress
+    - company
+    - password
+    - walletAddress
+  properties:
+    name:
+      type: string
+      description: "name of the investor"
+      example: "investor1"
+    emailAddress:
+      type: string
+      description: "investor's enail address"
+      example: "investor1@noumenadigital.com"
+    company:
+      type: string
+      description: "company name"
+      example: "noumena"
+    password:
+      type: string
+      description: "user's password for create token session"
+      example: "password1"
+    walletAddress:
+      type: string
+      description: "the address of the user's wallet"
+      example: "0xcW581ac20E797d6887eD13f654BDeFF7d29CEf8C"
+
+
+InvestorJson:
+  type: object
+  required:
+    - name
+    - emailAddress
+    - company
+    - status
+    - walletAddress
+  properties:
+    name:
+      type: string
+      description: "Unique identifier for the user."
+      example: "471ac52f-90dc-4838-ada8-cd774c952442"
+    emailAddress:
+      type: string
+      description: "user's email address"
+      example: "user@example.com "
+    company:
+      type: string
+      description: "company name"
+      example: ""
+    status:
+      type: string
+      description: "user's password for create token session"
+      example: "****"
+    walletAddress:
+      type: string
+      description: "the address of the user"
+      example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+
+InvestorListJson:
+  type: object
+  description: "list of investors"
+  required:
+    - requests
+    - cursor
+  properties:
+    requests:
+      type: array
+      items:
+        $ref: "#/InvestorJson"
+    cursor:
+      $ref: "./common.yml#/CursorJson"

@@ -1,0 +1,267 @@
+openapi: 3.0.3
+info:
+  title: "nd-api"
+  description: " arbitrum demo API"
+  termsOfService: ""
+  contact:
+    email: support@noumenadigital.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local development serve
+
+
+components:
+  securitySchemes:
+    bearerAuth: 
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        This API uses JWT (JSON Web Tokens) for authentication. The token must be included in the Authorization header of requests. Contact support for details on obtaining and renewing your JWT tokens.
+  schemas:
+    ApiErrorCode:
+      $ref: "data/errors.yml#/ApiErrorCode"
+
+tags:
+  - name: "User-session"
+    description: Create a session for the user
+  - name: "Investors-managment"
+    description: manage the investors
+  - name: "Opportunity-managment"
+    description: manage the Opportunities
+
+paths:
+# #########################
+#    User-session
+# #########################
+  /api/v1/session/authenticate:
+    post:
+      tags:
+        - "User-session"
+      summary: Create a user session
+      description: A user session is required to access the APIs
+      operationId: createUserSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "data/auth.yml#/AuthRequest"
+      responses:
+        200:
+          description: User session created
+          content:
+            application/json:
+              schema:
+                $ref: "data/auth.yml#/AuthTokenJson"
+        400:
+          $ref: "data/common.yml#/BadRequest"
+        403:
+          $ref: "data/common.yml#/Forbidden"
+
+  /api/v1/session/refresh:
+    put:
+      tags:
+        - "User-session"
+      summary: Refresh an existing user session
+      description: A user session is required to be refreshed periodically
+      operationId: refreshUserSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "data/auth.yml#/AuthRefreshRequest"
+      responses:
+        200:
+          description: User session refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "data/auth.yml#/AuthTokenJson"
+        400:
+          $ref: "data/common.yml#/BadRequest"
+        401:
+          $ref: "data/common.yml#/Unauthorized"
+  
+  /api/v1/session/info:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - "User-session"
+      summary: "returns the user session info"
+      description: "returns the user session info"
+      operationId: "getUserSessionInfo"
+      responses:
+        200:
+          description: "User session refreshed"
+          content:
+            application/json:
+              schema:
+                $ref: 'data/auth.yml#/AuthInfoJson'
+        400:
+          $ref: 'data/common.yml#/BadRequest'
+        401:
+          $ref: 'data/common.yml#/Unauthorized'
+
+# #########################
+#    Investors-management
+# #########################
+
+  /api/v1/admin/investors:
+    get:
+      security:
+          - bearerAuth: []
+      tags:
+        - "Investors-managment"
+      summary: "returns a list of registered investors"
+      description: "returns a list of registered investors"
+      operationId: "getInvestorlist"
+      responses:
+        200:
+          description: "returns a list of registered investors"
+          content:
+            application/json:
+              schema:
+                $ref: 'data/investor.yml#/InvestorListJson'
+        400:
+          $ref: 'data/common.yml#/BadRequest'
+        401:
+          $ref: 'data/common.yml#/Unauthorized'
+  
+  /api/v1/admin/investors/register/new:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - "Investors-managment"
+      summary: register new investor to our system
+      description: register new investor to our system
+      operationId: registerNewInvestor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "data/investor.yml#/RegisterInvestorRequest"
+      responses:
+        200:
+          $ref: "data/common.yml#/Created"
+        400:
+          $ref: "data/common.yml#/BadRequest"
+        403:
+          $ref: "data/common.yml#/Forbidden"
+
+# #########################
+#    Opportunity-management
+# #########################
+
+  /api/v1/opportunities:
+    get:
+      security:
+          - bearerAuth: []
+      tags:
+        - "Opportunity-managment"
+      summary: "returns a list of opportunities"
+      description: "returns a list of opportunities"
+      operationId: getOpportunitylist
+      responses:
+        200:
+          description: "returns a list of opportunities"
+          content:
+            application/json:
+              schema:
+                $ref: 'data/opportunity.yml#/OpportunityListJson'
+        400:
+          $ref: 'data/common.yml#/BadRequest'
+        401:
+          $ref: 'data/common.yml#/Unauthorized'
+  
+  /api/v1/admin/opportunities/new:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - "Opportunity-managment"
+      summary: create new Opportunity
+      description: create new Opportunity
+      operationId: createnewOpportunity
+      parameters:
+        - name: overrideDeadline
+          in: query
+          required: true
+          schema:
+            type: boolean
+          example: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "data/opportunity.yml#/CreateOpportunityRequest"
+      responses:
+        200:
+         $ref: "data/common.yml#/Created"
+        400:
+          $ref: "data/common.yml#/BadRequest"
+        403:
+          $ref: "data/common.yml#/Forbidden"
+
+  /api/v1/admin/opportunities/whitelist/add:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - "Opportunity-managment"
+      summary: Adding investor to the opportunity's whitelist
+      description: Adding investor to the opportunity's whitelist
+      operationId: AddInvestorToOpportunityWhitelists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "data/opportunity.yml#/AddInvestorToOpportunityWhitelistRequest"
+      responses:
+        200:
+         $ref: "data/common.yml#/Created"
+        400:
+          $ref: "data/common.yml#/BadRequest"
+        403:
+          $ref: "data/common.yml#/Forbidden"
+  
+  /api/v1/admin/opportunities/pay/interest:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - "Opportunity-managment"
+      summary: send request to pay the interest for  the chosen opportunity
+      description: send request to pay the interest for  the chosen opportunity
+      operationId: sendInterestPayOnOpportunityRequest
+      parameters:
+        - name: overrideInterestPaymentSchedule
+          in: query
+          required: true
+          schema:
+            type: boolean
+          example: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "data/opportunity.yml#/SendInterestPayForOpportunityRequest"
+      responses:
+        200:
+         $ref: "data/common.yml#/Created"
+        400:
+          $ref: "data/common.yml#/BadRequest"
+        403:
+          $ref: "data/common.yml#/Forbidden"

@@ -1,0 +1,72 @@
+NoContent:
+  description: "Operation successful. The request was successfully processed, and there is no additional content to send in the response."
+
+Created:
+  description: "Resource created. The request has been fulfilled, resulting in the creation of a new resource. The URI of the created resource is returned as a string."
+  content:
+    text/plain:
+      schema:
+        type: string
+        format: uri
+        description: "The URI of the newly created resource."
+
+NotFound:
+  description: "The specified resource was not found. The server can not find the requested resource. This is often used when the resource does not exist."
+  content:
+    application/json:
+      schema:
+        $ref: "common.yml#/ApiErrorJson"
+
+Unauthorized:
+  description: "Unauthorized to access this resource. The request has not been applied because it lacks valid authentication credentials for the target resource."
+  content:
+    application/json:
+      schema:
+        $ref: "common.yml#/ApiErrorJson"
+
+Forbidden:
+  description: "Access is forbidden. The server understood the request but refuses to authorize it."
+  content:
+    application/json:
+      schema:
+        $ref: "common.yml#/ApiErrorJson"
+
+NotImplemented:
+  description: "The server does not support the functionality required to fulfill the request. This is the appropriate response when the server does not recognize the request method and is incapable of supporting it for any resource."
+  content:
+    application/json:
+      schema:
+        $ref: "common.yml#/ApiErrorJson"
+
+BadRequest:
+  description: "Bad request. The server cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, invalid request message, or a validation error."
+  content:
+    application/json:
+      schema:
+        $ref: "common.yml#/ApiErrorJson"
+    
+CursorJson:
+  type: object
+  required:
+    - skip
+    - limit
+  properties:
+    skip:
+      type: number
+      description: "The number of items to skip before starting to collect the result set."
+    limit:
+      type: number
+      description: "The maximum number of items to return."
+ 
+ApiErrorJson:
+  type: object
+  required:
+    - code
+    - message
+  properties:
+    code:
+      type: string
+      description: "A code representing the type of error encountered."
+    message:
+      type: string
+      description: "A human-readable message providing more details about the error."

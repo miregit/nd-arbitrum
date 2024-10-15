@@ -5,6 +5,7 @@ tags
 .settings
 .DS_Store
 .idea
+.env
 *.iml
 .*.swp
 .m2/repository
@@ -12,3 +13,18 @@ tags
 pom.xml.versionsBackup
 .editorconfig
 *dump*
+
+/.idea/
+**/node_modules/*
+**/target/*
+**/dist/*
+services/libs/common/src/generated-sources
+services/libs/common/src/hardhat-generated-resources
+**/logs/*
+*.log
+.vscode
+/services/temp/*
+.terraform
+npl/codegen/.idea
+*.iml
+services/.env.services.secrets

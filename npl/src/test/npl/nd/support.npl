@@ -1,0 +1,14 @@
+package nd
+
+struct InterestRepaymentPeriodTestCase {
+    from: LocalDate,
+    to: LocalDate,
+    period: InterestRepaymentPeriod,
+    expected: List<LocalDate>
+};
+
+struct InterestRatePerPeriodTestCase {
+    annualInterestRate: Number,
+    period: InterestRepaymentPeriod,
+    expected: Number
+};

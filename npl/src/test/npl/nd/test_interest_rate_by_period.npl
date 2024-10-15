@@ -1,0 +1,14 @@
+package nd
+
+@test
+function interestRate_ByPeriod(test: Test) -> {
+    var tests = listOf(
+        InterestRatePerPeriodTestCase(10, InterestRepaymentPeriod.DAILY, 0.0002739726027397260),
+        InterestRatePerPeriodTestCase(10, InterestRepaymentPeriod.MONTHLY, 0.008333333333333333),
+        InterestRatePerPeriodTestCase(10, InterestRepaymentPeriod.YEARLY, 0.1)
+    );
+
+    for (t in tests) {
+        test.assertEquals(t.expected, interestRatePerPeriod(t.annualInterestRate, t.period));
+    }
+};

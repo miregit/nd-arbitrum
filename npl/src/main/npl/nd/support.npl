@@ -1,0 +1,85 @@
+package nd
+
+enum InterestRepaymentPeriod {
+    DAILY, MONTHLY, YEARLY
+};
+
+const TEN_MINUTES_IN_SECONDS: Number = 600;
+
+function toEpochSeconds(date: LocalDate) returns Number -> {
+    var startOfEpoch = localDateOf(1970, 01, 01);
+    var from = startOfEpoch.atStartOfDay(valueOfZoneId(ZoneId.EUROPE_ZURICH));
+    var to = date.atStartOfDay(valueOfZoneId(ZoneId.EUROPE_ZURICH));
+
+    var duration = from.durationUntil(to);
+    return duration.toSeconds();
+};
+
+function interestRatePerPeriod(annualInterestRate: Number, period: InterestRepaymentPeriod) returns Number -> {
+    var annualInterestRatePercentage = annualInterestRate / 100;
+
+    return match(period) {
+        DAILY -> annualInterestRatePercentage / 365
+        MONTHLY -> annualInterestRatePercentage / 12
+        YEARLY -> annualInterestRatePercentage
+    };
+};
+
+function interestPaymentDatesByPeriod(
+    from: LocalDate,
+    to: LocalDate,
+    period: InterestRepaymentPeriod
+) returns List<LocalDate> -> {
+    return match(period) {
+        DAILY -> interestPaymentDatesByDaily(from, to)
+        MONTHLY -> interestPaymentDatesByMonthly(from, to)
+        YEARLY -> interestPaymentDatesByYearly(from, to)
+    };
+};
+
+function interestPaymentDatesByDaily(from: LocalDate, to: LocalDate) returns List<LocalDate> -> {
+    var fromDateTime = from.atStartOfDay(valueOfZoneId(ZoneId.EUROPE_ZURICH));
+    var toDateTime = to.atStartOfDay(valueOfZoneId(ZoneId.EUROPE_ZURICH));
+
+    var duration = fromDateTime.durationUntil(toDateTime);
+    var daysDecimal = duration.toSeconds() / 86400;
+    var daysInteger = daysDecimal.roundTo(0);
+
+    var daysList = listOfSize(daysInteger, function(idx: Number) -> idx + 1);
+
+    var interestPaymentDates = listOf<LocalDate>();
+    for (dayCount in daysList) {
+        interestPaymentDates = interestPaymentDates.with(from.plus(days(dayCount)));
+    }
+
+    return interestPaymentDates;
+};
+
+function interestPaymentDatesByMonthly(from: LocalDate, to: LocalDate) returns List<LocalDate> -> {
+    var toTotalMonths = (to.year() * 12) + to.month();
+    var fromTotalMonths = (from.year() * 12) + from.month();
+
+    var monthsTotal = toTotalMonths - fromTotalMonths;
+
+    var monthsList = listOfSize(monthsTotal, function(idx: Number) -> idx + 1);
+
+    var interestPaymentDates = listOf<LocalDate>();
+    for (monthCount in monthsList) {
+        interestPaymentDates = interestPaymentDates.with(from.plus(months(monthCount)));
+    }
+
+    return interestPaymentDates;
+};
+
+function interestPaymentDatesByYearly(from: LocalDate, to: LocalDate) returns List<LocalDate> -> {
+    var yearsTotal = abs(to.year() - from.year());
+
+    var yearsList = listOfSize(yearsTotal, function(idx: Number) -> idx + 1);
+
+    var interestPaymentDates = listOf<LocalDate>();
+    for (yearCount in yearsList) {
+        interestPaymentDates = interestPaymentDates.with(from.plus(years(yearCount)));
+    }
+
+    return interestPaymentDates;
+};

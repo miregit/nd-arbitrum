@@ -1,0 +1,33 @@
+package nd
+
+@api
+protocol[admin, investor, worker] InvestorProvisionRequest(
+    var name: Text,
+    var companyName: Text,
+    var emailAddress: Text,
+    var addedBy: Text,
+    var WalletAddress: Text,
+    var ssid: Text
+) {
+    initial state pending;
+    state BlockchainProvisionSent
+    state active
+    state deactivated;
+    var requestedDate: DateTime = now();
+
+  @api
+  permission[admin] sendBlockchainProvisonRequest() | pending {
+        notify AddNewInvestor(this.WalletAddress);
+        become BlockchainProvisionSent;
+    };
+
+  @api
+  permission[admin | worker] activationUpdate() | BlockchainProvisionSent {
+        become active;
+    };
+
+  @api
+  permission[admin] deactivate() | active {
+        become deactivated;
+    };
+};

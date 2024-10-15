@@ -1,0 +1,27 @@
+FROM node:16
+
+ARG VERSION
+ARG BUILD_DATE
+ARG GIT_REV
+ARG VERSION_ARG
+ENV VERSION=${VERSION_ARG}
+
+LABEL org.label-schema.name="nd-demo-blockchain-event-reader" \
+  org.label-schema.vendor="Noumena Digital" \
+  org.label-schema.build-date="${BUILD_DATE}" \
+  org.label-schema.vcs-ref="${GIT_REV}" \
+  org.label-schema.version="${VERSION}" \
+  org.opencontainers.image.source="https://github.com/NoumenaDigital/nd-demo"
+
+
+RUN groupadd -r nd-demousers
+
+RUN useradd -r -g nd-demousers appuser
+
+WORKDIR /usr/src/app
+RUN chown -R appuser:nd-demousers /usr/src/app
+USER appuser
+COPY ./dist/apps/blockchain-event-reader /usr/src/app/dist
+COPY ./node_modules /usr/src/app/node_modules
+CMD node dist/main.js
+

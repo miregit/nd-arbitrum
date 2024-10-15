@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2021",
+    "sourceMap": true,
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@nd-demo/common": [
+        "libs/common/src"
+      ],
+      "@nd-demo/common/*": [
+        "libs/common/src/*"
+      ]
+    }
+  }
+}

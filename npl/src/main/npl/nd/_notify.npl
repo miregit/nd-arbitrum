@@ -1,0 +1,14 @@
+package nd
+
+notification AddNewInvestor(holderAddress: Text) returns Text;
+notification OpportunityContractDeployment(
+    name: Text,
+    interestRate: Number,
+    minimalTokenTranche: Number,
+    nominalAmount: Number,
+    numberOfTotalPayouts: Number,
+    subscriptionPeriodDeadline: Number,
+    interestRatePeriodAdjusted: Number
+) returns Text;
+notification OpportunityPayInterest(contractAddress: Text) returns Text;
+notification OpportunityAddInvestor(contractAddress: Text, investorAddress: Text) returns Text;

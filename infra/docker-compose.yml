@@ -1,0 +1,360 @@
+volumes:
+  keycloak-provisioning: {}
+  keycloak-db: {}
+  blockchain-events-db: {}
+  engine-db: {}
+  private_keys: {}
+  contracts: {}
+
+services:
+  api:
+    build:
+      context: ../services
+      dockerfile: ./apps/api/Dockerfile
+    env_file:
+      - "../services/.env.services.common"
+      - "../services/.env.services.secrets"
+      - ".env.services.docker.url"
+      - ../services/.env.services.${BLOCKCHAIN_NETWORK_NAME}
+    image: ghcr.io/noumenadigital/nd-demo/api:latest
+    environment:
+      HTTP_PORT: 3000
+      HTTP_ADMIN_PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      deploy-contracts:
+        condition: service_completed_successfully
+  
+  npl-event-consumer:
+    image: ghcr.io/noumenadigital/nd-demo/npl-event-consumer:latest
+    build:
+      context: ../services
+      dockerfile: ./apps/npl-event-consumer/Dockerfile
+    env_file:
+      - "../services/.env.services.common"
+      - "../services/.env.services.secrets"
+      - ".env.services.docker.url"
+      - ../services/.env.services.${BLOCKCHAIN_NETWORK_NAME}
+    volumes:
+      - contracts:/dist/contracts/
+    depends_on:
+      deploy-contracts:
+        condition: service_completed_successfully
+  
+  deploy-contracts:
+    image: ghcr.io/noumenadigital/nd-demo/deploy-contracts:latest
+    build:
+      context: ../services
+      dockerfile: ./apps/deploy-contracts/Dockerfile
+    env_file:
+      - "../services/.env.services.common"
+      - "../services/.env.services.secrets"
+      - ".env.services.docker.url"
+      - ../services/.env.services.${BLOCKCHAIN_NETWORK_NAME}
+    volumes:
+      - contracts:/dist/contracts/
+    depends_on:
+      keycloak-provisioning:
+        condition: service_completed_successfully
+  
+
+  npl-event-publisher:
+    image: ghcr.io/noumenadigital/nd-demo/npl-event-publisher:latest
+    restart: on-failure
+    build:
+      context: ../services
+      dockerfile: ./apps/npl-event-publisher/Dockerfile
+    env_file:
+      - "../services/.env.services.common"
+      - "../services/.env.services.secrets"
+      - ".env.services.docker.url"
+      - ../services/.env.services.${BLOCKCHAIN_NETWORK_NAME}
+    depends_on:
+      deploy-contracts:
+        condition: service_completed_successfully
+  
+#  blockchain-event-reader:
+#    image: ghcr.io/noumenadigital/nd-demo/blockchain-event-reader:latest
+#    build:
+#      context: ../services
+#      dockerfile: ./apps/blockchain-event-reader/Dockerfile
+#    env_file:
+#      - "../services/.env.services.common"
+#      - ".env.services.docker.url"
+#      - ../services/.env.services.${BLOCKCHAIN_NETWORK_NAME}
+#    ports:
+#      - 3003:3003
+#    volumes:
+#      - contracts:/dist/contracts/
+#    depends_on:
+#      deploy-contracts:
+#        condition: service_completed_successfully
+  
+  blockchain-events-db-creation-script:
+    mem_limit: 256m
+    image: ghcr.io/noumenadigital/nd-demo/blockchain-events-db-creation-script:latest
+    build:
+      context: ./blockchain-events-db-creation-script
+      dockerfile: ./Dockerfile
+    command: ./blockchain-events-db-creation-script.sh
+    env_file:
+      - "../services/.env.services.common"
+      - "../services/.env.services.secrets"
+      - ".env.services.docker.url"
+    depends_on:
+      blockchain-events-db:
+        condition: service_healthy
+  
+  blockchain-events-db:
+    mem_limit: 256m
+    platform: linux/arm64/v8
+    image: postgres
+    command: postgres -c port=5433
+    ports:
+      - 5433:5433
+    volumes:
+      - blockchain-events-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${BLOCKCHAIN_EVENTS_DB}
+      POSTGRES_USER: ${BLOCKCHAIN_EVENTS_DB_USER}
+      POSTGRES_PASSWORD: ${BLOCKCHAIN_EVENTS_DB_PASSWORD}
+      SERVICE_5433_NAME: ${BLOCKCHAIN_EVENTS_DB}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER} -p 5433",
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  
+  openapi:
+    image: ghcr.io/noumenadigital/nd-demo/openapi:latest
+    build:
+      context: ../openapi
+      dockerfile: ../openapi/Dockerfile
+    ports:
+      - "8080:8080"
+
+  engine:
+    mem_limit: 1g
+    restart: "no"
+    image: ghcr.io/noumenadigital/nd-demo/engine:latest
+    build:
+      context: ../npl
+      args:
+        PROJECT_NAME_ARG: nd-demo
+    ports:
+      - "12000:12000"
+    environment:
+      JAVA_TOOL_OPTIONS: -Dsun.management.jmxremote.level=FINEST -Dsun.management.jmxremote.handlers=java.util.logging.ConsoleHandler -Djava.util.logging.ConsoleHandler.level=FINEST -Djava.rmi.server.hostname=${DOCKER_HOST_ADDR:-host.docker.internal} -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=5557 -Dcom.sun.management.jmxremote.rmi.port=5557 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
+      JVM_MAX_RAM_PERCENTAGE: ${JVM_MAX_RAM_PERCENTAGE:-75}
+      ENGINE_PERSISTENT_KERNEL: "true"
+      ENGINE_PERSISTENT_KERNEL_CACHE: "true"
+      ENGINE_DB_URL: ${ENGINE_DB_URL}
+      ENGINE_DB_USER: ${ENGINE_DB_USER}
+      ENGINE_DB_PASSWORD: ${ENGINE_DB_PASSWORD}
+      ENGINE_DB_POSTGRAPHILE_USER: ${ENGINE_DB_USER}
+      ENGINE_DB_POSTGRAPHILE_PASSWORD: ${ENGINE_DB_PASSWORD}
+      JWT_TRUSTED_ISSUERS: "http://keycloak:11000/realms/nd-demo, http://localhost:11000/realms/nd-demo"
+      JWT_ISSUER_OVERRIDE: http://keycloak:11000/realms/nd-demo
+      SERVICE_TAGS: "direct|prometheus=/actuator/prometheusmetrics"
+      SERVICE_CHECK_HTTP: /actuator/health
+      SERVICE_CHECK_INTERVAL: 10s
+      SERVICE_12000_NAME: engine
+      SERVICE_5557_IGNORE: "true"
+      SERVICE_5557_NAME: engineJmx
+      FLUX_CONNECTION_TIMEOUT: "20000 millis"
+      ENGINE_AUTH_SERVER_BASE_URL: ${KEYCLOAK_ENDPOINT}
+      ENGINE_LOG_CONFIG: ${ENGINE_LOG_CONFIG:-classpath:/logback-json.xml}
+      # AMQP_BROKER_URL: "amqp://rabbitmq:5672/nd-demo"
+      # AMQP_QUEUE_NAME: ${RABBITMQ_BLOCKCHAIN_EVENT_QUEUE}
+      # AMQP_CONNECTION_TIMEOUT_SECONDS: 600
+
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      engine-db:
+        condition: service_started
+
+  graphql:
+    image: ghcr.io/noumenadigital/packages/postgraphile:${PLATFORM_VERSION}
+    environment:
+      POSTGRAPHILE_DB_URL: ${DATABASE_URL}
+      POSTGRAPHILE_DB_USER: ${ENGINE_DB_USER}
+      POSTGRAPHILE_TRUSTED_ISSUERS: "http://localhost:11000/**,"
+      POSTGRAPHILE_ENGINE_HEALTH_ENDPOINT: "http://engine:12000/actuator/health"
+      POSTGRAPHILE_ENGINE_HEALTH_TIMEOUT_SECONDS: 250
+      POSTGRAPHILE_ISSUER_OVERRIDE: "http://keycloak:11000/realms/nd-demo"
+      POSTGRAPHILE_DB_SCHEMA: "noumena"
+    ports:
+      - "5555:5555"
+    depends_on:
+      engine:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+
+  engine-db:
+    mem_limit: 256m
+    platform: linux/arm64/v8
+    image: library/postgres:11.5-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - engine-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${ENGINE_DB}
+      POSTGRES_USER: ${ENGINE_DB_USER}
+      POSTGRES_PASSWORD: ${ENGINE_DB_PASSWORD}
+      SERVICE_5432_NAME: engine-db
+      SERVICE_5432_CHECK_TCP: "true"
+      SERVICE_5432_CHECK_INTERVAL: 10s
+
+
+  keycloak:
+    image: ghcr.io/noumenadigital/nd-demo/keycloak:latest
+    build:
+      context: ./keycloak
+      dockerfile: ./Dockerfile
+    command: start --auto-build --hostname-strict=false --hostname-strict-https=false --http-enabled=true --metrics-enabled=true --db=postgres
+    environment:
+      KC_DB_URL: jdbc:postgresql://keycloak-db/postgres
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: testing
+      KC_HTTP_PORT: 11000
+      KC_HOSTNAME: ${KEYCLOAK_FRONTEND_URL}
+      KEYCLOAK_ENDPOINT: ${KEYCLOAK_ENDPOINT}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_ONBOARDING_PATH: ${KC_ONBOARDING_PATH}
+      KC_BASE_REDIRECT_URL: ${KC_BASE_REDIRECT_URL}
+      KC_SESSION_EXPIRED_PATH: ${KC_SESSION_EXPIRED_PATH}
+    ports:
+      - "11000:11000"
+    healthcheck:
+      test: curl -s -f ${KEYCLOAK_ENDPOINT}/health || exit 1
+      interval: 1s
+      retries: 60
+    depends_on:
+      - keycloak-db
+
+  keycloak-provisioning:
+    image: ghcr.io/noumenadigital/nd-demo/keycloak-provisioning:latest
+    build:
+      context: ./keycloak-provisioning
+    volumes:
+      - keycloak-provisioning:/state
+    command: /terraform/local.sh
+    environment:
+      KEYCLOAK_USER: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_URL: ${KEYCLOAK_ENDPOINT}
+      VAULT_ADDR: ${VAULT_ENDPOINT}
+      VAULT_TOKEN: ${VAULT_TOKEN}
+      TF_VAR_EMAIL_SENDER: ${TF_VAR_EMAIL_SENDER}
+      TF_VAR_application_name: ${TF_VAR_application_name}
+      TF_VAR_IS_LOCAL: "true"
+      TF_VAR_EMAIL_API_KEY: ${TF_VAR_EMAIL_API_KEY}
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  keycloak-db:
+    mem_limit: 256m
+    image: postgres:11.5-alpine
+    ports:
+      - "11040:5432"
+    volumes:
+      - keycloak-db:/var/lib/postgresql/data
+    environment:
+      SERVICE_5432_NAME: keycloak-db
+      SERVICE_5432_CHECK_TCP: "true"
+      SERVICE_5432_CHECK_INTERVAL: 10s
+    healthcheck:
+      test: pg_isready -U postgres
+      interval: 1s
+      timeout: 5s
+      retries: 50
+  
+  rabbitmq:
+    image: ghcr.io/noumenadigital/nd-demo/rabbitmq:latest
+    build:
+      context: ./rabbitmq
+      dockerfile: ./Dockerfile
+    hostname: rabbitmq
+    ports:
+      - "5671:5671"
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_CONFIG_FILE: /etc/rabbitmq/rabbitmq.conf
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbit log [{console,[{level,debug}]}]
+
+  consul:
+    mem_limit: 256m
+    restart: "no"
+    platform: linux/arm64/v8
+    image: library/consul:1.9.5
+    command: "agent -server -bootstrap-expect 1 -datacenter=localcloud -client=0.0.0.0 -ui"
+    ports:
+      - 18500:8500
+    environment:
+      SERVICE_8300_NAME: consul
+      SERVICE_8500_NAME: consul-http
+      SERVICE_8600_NAME: consul-dns
+      SERVICE_8301_IGNORE: "true" # Serf LAN
+      SERVICE_8302_IGNORE: "true" # Serf WAN
+
+  vault:
+    mem_limit: 256m
+    platform: linux/arm64/v8
+    image: vault:1.13.3
+    privileged: true
+    ports:
+      - "8200:8200"
+      - "8201:8201"
+    env_file:
+      - "../services/.env.services.common"
+      - "../services/.env.services.secrets"
+      - ".env.services.docker.url"
+      - ../services/.env.services.${BLOCKCHAIN_NETWORK_NAME}
+    environment:
+      SERVICE_8200_NAME: vault
+      SERVICE_8201_NAME: vault-ui
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN}
+    depends_on:
+      - consul
+
+  registrator:
+    mem_limit: 256m
+    restart: "no"
+    platform: linux/amd64
+    image: gliderlabs/registrator:latest
+    command: -internal consul://consul:8500
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock"
+    depends_on:
+      - consul
+
+  hardhat-node:
+    build:
+      context: ../ethereum
+      dockerfile: ../ethereum/Dockerfile
+      args:
+        - BLOCKCHAIN_PRIVATE_KEYS_FOLDER=${BLOCKCHAIN_PRIVATE_KEYS_FOLDER}
+        - BLOCKCHAIN_PRIVATE_KEYS_PATH=${BLOCKCHAIN_PRIVATE_KEYS_PATH}
+    env_file:
+      - "../services/.env.services.common"
+      - "../services/.env.services.secrets"
+      - ../services/.env.services.${BLOCKCHAIN_NETWORK_NAME}
+    ports:
+      - "8545:8545"
+    volumes:
+      - private_keys:/${BLOCKCHAIN_PRIVATE_KEYS_FOLDER}

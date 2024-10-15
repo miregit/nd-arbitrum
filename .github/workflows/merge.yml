@@ -1,0 +1,102 @@
+name: Merge
+on:
+  push:
+    branches:
+      - master
+
+env:
+  GITHUB_USER_NAME: ${{ secrets.GH_USERNAME_PUBLIC_REPOS }}
+  GITHUB_USER_PASS: ${{ secrets.GH_PASSWORD_PUBLIC_REPOS }}
+  MAVEN_CLI_OPTS: -s ../.m2/settings.xml --batch-mode
+  VERSION_PREFIX: "1.0"
+  infra_path: ./infra
+
+jobs:
+  build-push-npl:
+    runs-on: ubuntu-latest
+    env:
+      docker-context: "./npl"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ env.GITHUB_USER_NAME }}
+          password: ${{ env.GITHUB_USER_PASS }}
+      - uses: actions/setup-java@v3
+        with:
+          java-version: "17"
+          distribution: "corretto"
+          cache: "maven"
+      - name: get pr number
+        id: pr_ver
+        run: echo "pr_version=$(git log -1  --name-status  origin/master | grep   -o '#[[:digit:]]*'  | grep -o '[[:digit:]]*')" >> $GITHUB_OUTPUT
+      - name: Create images and push engine
+        working-directory: ${{ env.infra_path }}
+        run: make -e build-npl-protocols && make -e build-images-npl-protocols && make -e push-images-npl-protocols
+        env:
+          VERSION: "${{ env.VERSION_PREFIX }}.${{ steps.pr_ver.outputs.pr_version }}"
+      - name: upload npl generated resource to artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npl-output
+          path: |
+            ./services/libs/common/src/generated-sources
+
+  build-push-services:
+    needs: build-push-npl
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.infra_path }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ env.GITHUB_USER_NAME }}
+          password: ${{ env.GITHUB_USER_PASS }}
+      - name: get pr number
+        id: pr_ver
+        run: echo "pr_version=$(git log -1  --name-status  origin/master | grep   -o '#[[:digit:]]*'  | grep -o '[[:digit:]]*')" >> $GITHUB_OUTPUT
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          cache: "yarn"
+          cache-dependency-path: "**/yarn.lock"
+      - name: Download npl generated resource to artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: npl-output
+          path: ./services/libs/common/src/generated-sources
+      - name: Build & Lint Services
+        run: make -e build-lint-services
+      - name: Create images and push services
+        run: make -e build-images-services && make -e push-images-services
+        env:
+          VERSION: "${{ env.VERSION_PREFIX }}.${{ steps.pr_ver.outputs.pr_version }}"
+
+  build-push-common:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.infra_path }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ env.GITHUB_USER_NAME }}
+          password: ${{ env.GITHUB_USER_PASS }}
+      - name: get pr number
+        id: pr_ver
+        run: echo "pr_version=$(git log -1  --name-status  origin/master | grep   -o '#[[:digit:]]*'  | grep -o '[[:digit:]]*')" >> $GITHUB_OUTPUT
+      - name: Create images and push common
+        run: make -e build-images-common && make -e push-images-common
+        env:
+          VERSION: "${{ env.VERSION_PREFIX }}.${{ steps.pr_ver.outputs.pr_version }}"
+          NOMAD_LOCAL_PATH: ""

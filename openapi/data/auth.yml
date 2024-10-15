@@ -1,0 +1,94 @@
+AuthRequest:
+  type: object
+  description: "Payload for authenticating a user, requiring username and password."
+  required:
+    - username
+    - password
+  properties:
+    username:
+      type: string
+      description: "The username for authentication."
+      example: "admin@investora.com"
+    password:
+      type: string
+      format: password
+      description: "The password for authentication. Should be transmitted securely."
+      example: "nd-demo123!"
+
+AuthRefreshRequest:
+  type: object
+  description: "Request payload for refreshing an authentication token using a refresh token."
+  required:
+    - refreshToken
+  properties:
+    refreshToken:
+      type: string
+      description: "The refresh token previously issued to the client."
+      example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  
+AuthTokenJson:
+  type: object
+  required:
+    - userId
+    - token
+    - refreshToken
+  properties:
+    userId:
+      type: string
+      description: "Unique identifier for the user."
+      example: "471ac52f-90dc-4838-ada8-cd774c952442"
+    token:
+      type: string
+      description: "JWT token for accessing protected resources."
+      example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    refreshToken:
+      type: string
+      description: "Token used to refresh the authentication session."
+      example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+AuthInfoJson:
+  type: object
+  required:
+    - role
+    - userId
+    - username
+    - firstName
+    - isFinishedOnboarding
+    - systemRole
+  properties:
+    role:
+      type: string
+      description: "The user's role within the application."
+      example: "admin"
+    userId:
+      type: string
+      description: "Unique identifier for the user."
+      example: "471ac52f-90dc-4838-ada8-cd774c952442"
+    username:
+      type: string
+      description: "The user's username."
+      example: "user@example.com"
+    firstName:
+      type: string
+    isFinishedOnboarding:
+      type: boolean
+      description: "Flag indicating whether the user has completed the onboarding process."
+      example: true
+    systemRole:
+      type: array
+      items:
+        type: string
+      description: "List of system roles assigned to the user."
+      example: ["request_manager", "approver"]
+
+SetPassword:
+  type: object
+  description: "Payload for setting or changing a user's password."
+  required:
+    - newPassword
+  properties:
+    newPassword:
+      type: string
+      format: password
+      description: "The new password for the user. Should meet complexity requirements."
+      example: "newSecurePassword123"

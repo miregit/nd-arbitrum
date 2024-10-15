@@ -1,0 +1,33 @@
+{
+  "name": "hardhat-project",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
+    "@nomicfoundation/hardhat-ethers": "^3.0.5",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.2",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.12.13",
+    "chai": "^4.4.1",
+    "ethers": "^6.1.0",
+    "hardhat": "^2.6.0",
+    "hardhat-gas-reporter": "^1.0.8",
+    "solidity-coverage": "^0.8.0",
+    "ts-node": "^10.9.2",
+    "typechain": "^8.3.2",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.7.3",
+    "@openzeppelin/contracts-upgradeable": "^4.9.2",
+
+    "dotenv": "^16.4.5",
+    "npx": "^3.0.0"
+  },
+  "scripts": {
+    "postinstall": "npx hardhat compile && npx hardhat typechain"
+  }
+}

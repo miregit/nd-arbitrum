@@ -1,0 +1,46 @@
+package nd
+
+@test
+function opportunityRequest_interestPaymentSchedule(test: Test) -> {
+    var tests = listOf(
+        InterestRepaymentPeriodTestCase(
+            localDateOf(2024, 02, 25),
+            localDateOf(2029, 02, 25),
+            InterestRepaymentPeriod.YEARLY,
+            listOfSize(5, function(idx: Number) -> localDateOf(2024, 02, 25).plus(years(idx + 1)))
+        ),
+        InterestRepaymentPeriodTestCase(
+            localDateOf(2024, 02, 25),
+            localDateOf(2024, 07, 25),
+            InterestRepaymentPeriod.MONTHLY,
+            listOfSize(5, function(idx: Number) -> localDateOf(2024, 02, 25).plus(months(idx + 1)))
+        ),
+        InterestRepaymentPeriodTestCase(
+            localDateOf(2024, 02, 25),
+            localDateOf(2024, 03, 02),
+            InterestRepaymentPeriod.DAILY,
+            listOfSize(6, function(idx: Number) -> localDateOf(2024, 02, 25).plus(days(idx + 1)))
+        ),
+        InterestRepaymentPeriodTestCase(
+            localDateOf(2024, 10, 03), // 24,298
+            localDateOf(2025, 04, 03), // 24,304
+            InterestRepaymentPeriod.MONTHLY,
+            listOfSize(6, function(idx: Number) -> localDateOf(2024, 10, 03).plus(months(idx + 1)))
+        )
+    );
+
+    for (t in tests) {
+        var opportunityRequest = OpportunityRequest[test_operator, test_operator, test_operator](
+            name = "Test Opportunity",
+            interestRate = 10,
+            minimalTokenTranche = 0.1,
+            nominalAmount = 0.1,
+            addedBy = "addedBy",
+            subscriptionPeriodEnd = t.from,
+            maturityDate = t.to,
+            interestRepaymentPeriod = t.period
+        );
+
+        test.assertEquals(t.expected, opportunityRequest.interestPaymentSchedule);
+    }
+};

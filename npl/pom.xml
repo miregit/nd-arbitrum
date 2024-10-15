@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>npl</artifactId>
+
+    <parent>
+        <groupId>com.noumenadigital.nd-demo</groupId>
+        <artifactId>parent-pom</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../parent-pom</relativePath>
+    </parent>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.noumenadigital.platform</groupId>
+            <artifactId>clients</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>src/main/npl</sourceDirectory>
+        <testSourceDirectory>src/test/npl</testSourceDirectory>
+
+        <plugins>
+            <plugin>
+                <groupId>com.noumenadigital.platform</groupId>
+                <artifactId>npl-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>npl-compile-and-test</id>
+                        <goals>
+                            <goal>npl-compile</goal>
+                            <goal>npl-test</goal>
+                            <goal>npl-codegen</goal>
+                            <goal>npl-puml</goal>
+                            <goal>npl-api</goal>
+                        </goals>
+                        <configuration>
+                            <tag>nd-demo-1.0.0</tag>
+                            <enableCompilerOptimisations>true</enableCompilerOptimisations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.4.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/target/generated-sources/openapi/nd-openapi.yml</inputSpec>
+                            <generatorName>typescript-axios</generatorName>
+                            <output>${basedir}/../services/libs/common/src/generated-sources/npl</output>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

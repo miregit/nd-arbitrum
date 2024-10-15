@@ -1,0 +1,65 @@
+{
+  "monorepo": true,
+  "root": "apps/api",
+  "sourceRoot": "apps/api/src",
+  "compilerOptions": {
+    "webpack": true,
+    "tsConfigPath": "apps/api/tsconfig.app.json"
+  },
+  "projects": {
+    "common": {
+      "type": "library",
+      "root": "libs/common",
+      "entryFile": "index",
+      "sourceRoot": "libs/common/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/common/tsconfig.lib.json"
+      }
+    },
+    "api": {
+      "type": "application",
+      "root": "apps/api",
+      "entryFile": "main",
+      "sourceRoot": "apps/api/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/api/tsconfig.app.json"
+      }
+    },
+    "deploy-contracts": {
+      "type": "application",
+      "root": "apps/deploy-contracts",
+      "entryFile": "main",
+      "sourceRoot": "apps/deploy-contracts/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/deploy-contracts/tsconfig.app.json"
+      }
+    },
+    "npl-event-consumer": {
+      "type": "application",
+      "root": "apps/npl-event-consumer",
+      "entryFile": "main",
+      "sourceRoot": "apps/npl-event-consumer/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/npl-event-consumer/tsconfig.app.json"
+      }
+    },
+    "npl-event-publisher": {
+      "type": "application",
+      "root": "apps/npl-event-publisher",
+      "entryFile": "main",
+      "sourceRoot": "apps/npl-event-publisher/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/npl-event-publisher/tsconfig.app.json"
+      }
+    },
+    "blockchain-event-reader": {
+      "type": "application",
+      "root": "apps/blockchain-event-reader",
+      "entryFile": "main",
+      "sourceRoot": "apps/blockchain-event-reader/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/blockchain-event-reader/tsconfig.app.json"
+      }
+    }
+  }
+}

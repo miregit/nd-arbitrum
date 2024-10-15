@@ -1,0 +1,46 @@
+name: "Sonar Code Security and Quality Scanner"
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+env:
+  GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"  # Needed to get PR information, if any
+  MAVEN_CLI_OPTS: -s .m2/settings.xml --batch-mode
+
+jobs:
+  sonar-scanner:
+    name: "Scan code repo"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Set up Java"
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+          cache: 'maven'
+
+      - name: "Cache SonarCloud packages"
+        uses: actions/cache@v1
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: "Build and analyze"
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: make sonar-scan
+
+  check-secrets:
+    name: "Checking for secrets"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Secret Scanner"
+        uses: secret-scanner/action@0.0.2
+

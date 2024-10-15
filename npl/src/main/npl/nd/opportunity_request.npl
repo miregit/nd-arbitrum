@@ -1,0 +1,127 @@
+package nd
+
+@api
+protocol[admin, investor, worker] OpportunityRequest(
+    var name: Text,
+    var interestRate: Number,
+    var minimalTokenTranche: Number,
+    var nominalAmount: Number,
+    var addedBy: Text,
+    var subscriptionPeriodEnd: LocalDate,
+    var maturityDate: LocalDate,
+    var interestRepaymentPeriod: InterestRepaymentPeriod
+) {
+    initial state pending;
+    state BlockchainProvisionSent;
+    state subscriptionPeriod;
+    state active;
+    state expired;
+    state breached;
+    final state complete;
+
+    var investors: List<Text> = listOf<Text>();
+    var interestPayHistory: List<Number> = listOf<Number>();
+    var interestPaymentSchedule: List<LocalDate> = interestPaymentDatesByPeriod(
+        subscriptionPeriodEnd,
+        maturityDate,
+        interestRepaymentPeriod
+    );
+    var nextScheduledPaymentDate: DateTime = getNextScheduledInterestPaymentDateTime();
+    var interestPaymentScheduleTimeStamps: List<Number> = interestPaymentSchedule.map(toEpochSeconds);
+    var interestRatePeriodAdjusted: Number = interestRatePerPeriod(interestRate, interestRepaymentPeriod);
+    var numberOfPayments: Number = interestPaymentSchedule.size();
+    var requestedDate: DateTime = now();
+    var contractAddress: Text = "0x00";
+
+    @api
+    permission[admin] sendActivationRequest(overrideDeadline: Boolean) | pending {
+        var subscriptionDeadlineInSeconds = toEpochSeconds(subscriptionPeriodEnd) - toEpochSeconds(now().toLocalDate());
+        var subscriptionPeriodDeadline = if (overrideDeadline) TEN_MINUTES_IN_SECONDS else
+            subscriptionDeadlineInSeconds;
+
+        notify OpportunityContractDeployment(
+            this.name,
+            this.interestRate,
+            this.minimalTokenTranche,
+            this.nominalAmount,
+            this.numberOfPayments,
+            subscriptionPeriodDeadline,
+            this.interestRatePeriodAdjusted
+        );
+        become BlockchainProvisionSent;
+    };
+
+    @api
+    permission[admin | worker] startSubscriptionPeriod(
+        contractAdd: Text,
+        deployTime: Number
+    ) | BlockchainProvisionSent {
+        this.contractAddress = contractAdd;
+        become subscriptionPeriod;
+    };
+
+    @api
+    permission[admin | worker] addInvestorRequest(investorWalletAddress: Text) | subscriptionPeriod {
+        notify OpportunityAddInvestor(this.contractAddress, investorWalletAddress);
+    };
+
+    @api
+    permission[admin | worker] addInvestorOnchain(investorWalletAddress: Text) | subscriptionPeriod {
+        this.investors = this.investors.with(investorWalletAddress);
+    };
+
+    @api
+    permission[admin | worker] activateState() | subscriptionPeriod {
+        become active;
+    };
+
+    @api
+    obligation[admin] payInterestRequest(overrideInterestPaymentSchedule: Boolean) before
+        nextScheduledPaymentDate | active {
+        require(
+            this.isReadyToPay[admin](
+                overrideInterestPaymentSchedule
+            ),
+            "It's not the scheduled time to pay interest yet"
+        );
+
+        nextScheduledPaymentDate = getNextScheduledInterestPaymentDateTime();
+
+        if (isLastInterestPayment()) {
+            become expired
+        };
+
+        notify OpportunityPayInterest(this.contractAddress);
+    } otherwise become breached;
+
+    function isLastInterestPayment() returns Boolean -> interestPayHistory.size() == interestPaymentSchedule.size() - 1;
+
+    function getNextScheduledInterestPaymentDateTime() returns DateTime ->
+        getNextScheduledInterestPayment().atStartOfDay(valueOfZoneId(ZoneId.EUROPE_ZURICH));
+
+    function getNextScheduledInterestPayment() returns LocalDate -> {
+        var index = interestPayHistory.size();
+        return interestPaymentSchedule.get(index);
+    };
+
+    @api
+    permission[admin] isReadyToPay(overrideInterestPaymentSchedule: Boolean) returns Boolean {
+        if (!overrideInterestPaymentSchedule) {
+            var nextPaymentLocalDate = getNextScheduledInterestPayment();
+            var today = now().toLocalDate();
+            return today.isAfter(nextPaymentLocalDate, true);
+        } else {
+            return true;
+        };
+    };
+
+    @api
+    permission[admin | worker] addInterestPaymentRecordToHistory(payDate: Number) | active {
+        this.interestPayHistory = this.interestPayHistory.with(payDate);
+    };
+
+    @api
+    permission[admin | worker] updateExpiredState() | active {
+        become expired;
+    };
+};

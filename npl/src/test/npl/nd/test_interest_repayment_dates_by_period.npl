@@ -1,0 +1,35 @@
+package nd
+
+@test
+function interestRepaymentDates_ByPeriod(test: Test) -> {
+    var tests = listOf(
+        InterestRepaymentPeriodTestCase(
+            localDateOf(2024, 02, 25),
+            localDateOf(2029, 02, 25),
+            InterestRepaymentPeriod.YEARLY,
+            listOfSize(5, function(idx: Number) -> localDateOf(2024, 02, 25).plus(years(idx + 1)))
+        ),
+        InterestRepaymentPeriodTestCase(
+            localDateOf(2024, 02, 25),
+            localDateOf(2024, 07, 25),
+            InterestRepaymentPeriod.MONTHLY,
+            listOfSize(5, function(idx: Number) -> localDateOf(2024, 02, 25).plus(months(idx + 1)))
+        ),
+        InterestRepaymentPeriodTestCase(
+            localDateOf(2024, 02, 25),
+            localDateOf(2024, 03, 02),
+            InterestRepaymentPeriod.DAILY,
+            listOfSize(6, function(idx: Number) -> localDateOf(2024, 02, 25).plus(days(idx + 1)))
+        ),
+        InterestRepaymentPeriodTestCase(
+            localDateOf(2024, 10, 03),
+            localDateOf(2025, 04, 03),
+            InterestRepaymentPeriod.MONTHLY,
+            listOfSize(6, function(idx: Number) -> localDateOf(2024, 10, 03).plus(months(idx + 1)))
+        )
+    );
+
+    for (t in tests) {
+        test.assertEquals(t.expected, interestPaymentDatesByPeriod(t.from, t.to, t.period));
+    }
+};
